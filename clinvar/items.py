@@ -16,6 +16,6 @@ class ClinvarItem(scrapy.Item):
     status = scrapy.Field()
     title = scrapy.Field()
     rs = scrapy.Field()
-    vtype = scrapy.Field()
-    loci = scrapy.Field()
+    variant_type = scrapy.Field()
+    location = scrapy.Field()
 

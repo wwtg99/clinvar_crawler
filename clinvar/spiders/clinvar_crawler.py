@@ -29,17 +29,31 @@ class ClinvarCrawlerSpider(scrapy.Spider):
     def parse(self, response):
         vid = response.xpath('//div[@id="main_box"]//dl[@id="mainrevstatandid"]/dd/text()').extract()[0]
         sig = response.xpath('//div[@id="main_box"]//dl[@class="details clearfix clin_sig_dl"]/dd/a/text()').extract()[0]
-        status = response.xpath('//div[@id="main_box"]//dl[@id="mainrevstatandid"]//span[@class="clinsig_confidence rating"]/span/span').extract()
-        rsa = response.xpath('//div[@id="main_box"]//div[@class="dl_container_content"]//dd/a//text()').extract()
-        rs = []
-        for r in rsa:
-            if r[0:2] == 'rs':
-                rs.append(r)
-        item = ClinvarItem()
-        item['vid'] = vid
-        item['significance'] = sig
-        item['rs'] = rs
-        yield item
+        status = response.xpath('//div[@id="main_box"]//dl[@id="mainrevstatandid"]//span[@class="rev_stat_text hide"]/text()').extract()
+        if len(status) > 0:
+            status = status[0]
+        else:
+            status = 0
+        # alleles
+        titles = response.xpath('//div[@id="main_box"]//h4')
+        for title in titles:
+            t = title.xpath('text()').extract()[0]
+            item = ClinvarItem()
+            item['vid'] = vid
+            item['significance'] = sig
+            item['status'] = status
+            item['title'] = t
+            dts = title.xpath('//div[@id="main_box"]//h4')[0].xpath('following-sibling::div/div[@class="dl_container_content"]/dl/dt')
+            for d in dts:
+                tt = d.xpath('text()').extract()[0]
+                dd = d.xpath('following-sibling::dd[1]')
+                if tt == 'Variant type:':
+                    item['variant_type'] = dd.xpath('text()').extract()[0]
+                elif tt == 'Genomic location:':
+                    item['location'] = dd.xpath('./ul/li/span/text()').extract()
+                elif tt == 'NCBI 1000 Genomes Browser:':
+                    item['rs'] = dd.xpath('./a/text()').extract()[0]
+            yield item
 
     def from_id_list(self):
         """
